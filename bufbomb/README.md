@@ -19,25 +19,26 @@
 **ebp** 压栈，**esp** 指向 **ebp**，**esp** 减 *0x38* 开出栈空间，**eax** 参数地址指向 **ebp** 加 *0x28*。    
 所以整个输入栈为：
 
->40字节 + ebp + ret address = 40 + 4 +4 = 48字节。
+>40字节 + ebp + ret 地址 = 40 + 4 +4 = 48字节。
 
 
-我们的bufbomb反汇编结果
+The disassembly result of our bufbomb.
 ```
 08048ed2 <getbuf>:
  8048ed2:   83 ec 3c                sub    $0x3c,%esp
  8048ed5:   8d 44 24 10             lea    0x10(%esp),%eax
  8048ed9:   89 04 24                mov    %eax,(%esp)
 ```
-不知为何这个程序反汇编没有**ebp**，估计哪位改了改。    
-直接开始**esp**减 *0x3c*，**eax** 指向 **esp** 加 *0x10*，    
-所以从 **eax** 到 ret 距离为：    
+There is no **ebp** register in this disassembly program，估计哪位改了改。    
+Let's go! **esp** sub *0x3c*，**eax** point to **esp** plus *0x10*，    
+So the distance form **eax** to ret is：    
 
->44字节 + ret address = 44 + 4 = 48字节
+>44bytes + ret address = 44 + 4 = 48bytes
 
-结果相同。
+We get the same result 48.
 
-最后根据自己情况，将地址跳转到_somke()_地址： `08048ccc <smoke>:`
+Finally, according to your own situation，turn the adress to the address of _somke()_ function： `08048ccc <smoke>:`
+
 
 ## title
 
