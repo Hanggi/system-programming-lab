@@ -5,8 +5,9 @@
 网上也有相同内容，但反汇编结果不同。
 
 ## level 0
+首先通过 `objdump -d bufbomb > buf_asm` 导出bufbomb反汇编文件。
 
-
+网络流传的一套反汇编结果
 ```
 08048c04 <getbuf>:
  8048c04:	55                   	push   %ebp
@@ -15,6 +16,18 @@
  8048c0a:	8d 45 d8             	lea    -0x28(%ebp),%eax
  8048c0d:	89 04 24             	mov    %eax,(%esp)
 ```
+ebp 压栈，esp指向ebp，esp减0x38开出栈空间，eax参数地址指向ebp加0x28。
+所以整个输入栈为 40字节 + ebp + ret address = 40 + 4 +4 = 48字节。
+
+
+我们的bufbomb反汇编结果
+```
+08048ed2 <getbuf>:
+ 8048ed2:   83 ec 3c                sub    $0x3c,%esp
+ 8048ed5:   8d 44 24 10             lea    0x10(%esp),%eax
+ 8048ed9:   89 04 24                mov    %eax,(%esp)
+```
+
 
 ## title
 
