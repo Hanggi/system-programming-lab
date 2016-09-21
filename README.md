@@ -2,8 +2,6 @@
 
 
 
-## level 0
-
 
 ## title
 
