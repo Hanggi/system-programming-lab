@@ -81,6 +81,20 @@ I got the value of 0x11c1be21.
  8049078:	3b 05 e4 c1 04 08    	cmp    0x804c1e4,%eax
 ```
 
+这是我们的版本：
+```
+08048cf3 <fizz>:
+ 8048cf3:	83 ec 1c             	sub    $0x1c,%esp
+ 8048cf6:	8b 44 24 20          	mov    0x20(%esp),%eax
+ 8048cfa:	3b 05 0c d1 04 08    	cmp    0x804d10c,%eax
+```
+因为我们不是call fizz函数，而是直接 jmp 到fizz，因此程序没有自动push返回地址入栈，所以 **esp** 在上一题返回地址所在位置的 *+4* 的位置。
+也就是说，进入fizz的时候， **esp** 指向了ret address + 4 的单元。
+从代码可以看到 **esp** 减 *0x1c*，然后参数寄存器获取 **esp** 加 *0x20* 的内容作为与cookie 比较的值，我们只需把这一地址的值改为我们的cookie就可以了。
+
+
+
+
 ## title
 
 *This text will be italic*
