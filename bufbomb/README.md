@@ -1,4 +1,4 @@
-# system programming Lab
+# Bufbomb
 
 实验整体思路为，在给定的32位程序-bufbomb输入溢出内容，达到改变程序原有执行顺序。
 
@@ -6,6 +6,14 @@
 
 ## level 0
 
+```
+08048c04 <getbuf>:
+ 8048c04:	55                   	push   %ebp
+ 8048c05:	89 e5                	mov    %esp,%ebp
+ 8048c07:	83 ec 38             	sub    $0x38,%esp
+ 8048c0a:	8d 45 d8             	lea    -0x28(%ebp),%eax
+ 8048c0d:	89 04 24             	mov    %eax,(%esp)
+```
 
 ## title
 
