@@ -6,6 +6,7 @@
 
 ## level 0
 
+
 ```
 08048c04 <getbuf>:
  8048c04:	55                   	push   %ebp
