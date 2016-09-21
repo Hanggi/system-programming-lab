@@ -8,7 +8,7 @@
 首先通过 `objdump -d bufbomb > buf_asm` 导出bufbomb反汇编文件。
 
 网络流传的一套反汇编结果
-```
+```c
 08048c04 <getbuf>:
  8048c04:	55                   	push   %ebp
  8048c05:	89 e5                	mov    %esp,%ebp
