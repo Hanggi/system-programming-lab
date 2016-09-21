@@ -64,10 +64,22 @@ cc 8c 04 08
 ## level 1
 在这个level，我们的任务是调用 *fizz()* 函数。但是fizz需要一个参数，当这个参数等于你的cookie时，才能通过升级。
 
-Let's use the following command.
-`$ ./makecookie hanggi`
+Let's use the following command to get our cookie.
+```
+$ ./makecookie hanggi
+```
 I got the value of 0x11c1be21.
 
+
+这个是网上流行的一个版本：
+```
+0804906f <fizz>:
+ 804906f:	55                   	push   %ebp
+ 8049070:	89 e5                	mov    %esp,%ebp
+ 8049072:	83 ec 18             	sub    $0x18,%esp
+ 8049075:	8b 45 08             	mov    0x8(%ebp),%eax
+ 8049078:	3b 05 e4 c1 04 08    	cmp    0x804c1e4,%eax
+```
 
 ## title
 
