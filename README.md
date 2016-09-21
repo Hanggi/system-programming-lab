@@ -1,7 +1,10 @@
 # system programming
 
 
-
+```bash
+$ echo "hell"
+$ ./makecookie haanng
+```
 
 ## title
 
