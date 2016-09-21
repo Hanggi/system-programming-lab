@@ -32,7 +32,7 @@ ebp 压栈，esp 指向 ebp，esp 减 0x38 开出栈空间，eax 参数地址指
 ```
 不知为何这个程序反汇编没有ebp，估计哪位改了改。
 
-直接开始 esp 减 0x3c，eax 指向 esp 加 0x10，
+直接开始*esp*减 0x3c，eax 指向 esp 加 0x10，
 
 所以从 eax 到 ret 距离为：
 
@@ -40,7 +40,7 @@ ebp 压栈，esp 指向 ebp，esp 减 0x38 开出栈空间，eax 参数地址指
 
 结果相同。
 
-最后地址跳转到somke地址： `08048ccc <smoke>:`
+最后根据自己情况，将地址跳转到somke()地址： `08048ccc <smoke>:`
 
 ## title
 
