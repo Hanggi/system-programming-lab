@@ -16,8 +16,11 @@
  8048c0a:	8d 45 d8             	lea    -0x28(%ebp),%eax
  8048c0d:	89 04 24             	mov    %eax,(%esp)
 ```
-ebp 压栈，esp指向ebp，esp减0x38开出栈空间，eax参数地址指向ebp加0x28。
-所以整个输入栈为 40字节 + ebp + ret address = 40 + 4 +4 = 48字节。
+ebp 压栈，esp 指向 ebp，esp 减 0x38 开出栈空间，eax 参数地址指向 ebp 加 0x28。
+
+所以整个输入栈为：
+
+>40字节 + ebp + ret address = 40 + 4 +4 = 48字节。
 
 
 我们的bufbomb反汇编结果
@@ -27,7 +30,17 @@ ebp 压栈，esp指向ebp，esp减0x38开出栈空间，eax参数地址指向ebp
  8048ed5:   8d 44 24 10             lea    0x10(%esp),%eax
  8048ed9:   89 04 24                mov    %eax,(%esp)
 ```
+不知为何这个程序反汇编没有ebp，估计哪位改了改。
 
+直接开始 esp 减 0x3c，eax 指向 esp 加 0x10，
+
+所以从 eax 到 ret 距离为：
+
+>44字节 + ret address = 44 + 4 = 48字节
+
+结果相同。
+
+最后地址跳转到somke地址： `08048ccc <smoke>:`
 
 ## title
 
