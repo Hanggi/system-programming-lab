@@ -30,17 +30,17 @@ ebp 压栈，esp 指向 ebp，esp 减 0x38 开出栈空间，eax 参数地址指
  8048ed5:   8d 44 24 10             lea    0x10(%esp),%eax
  8048ed9:   89 04 24                mov    %eax,(%esp)
 ```
-不知为何这个程序反汇编没有ebp，估计哪位改了改。
+不知为何这个程序反汇编没有_ebp_，估计哪位改了改。
 
-直接开始*esp*减 0x3c，eax 指向 esp 加 0x10，
+直接开始_esp_减 *0x3c*，_eax_ 指向 _esp_ 加 *0x10*，
 
-所以从 eax 到 ret 距离为：
+所以从 _eax_ 到 ret 距离为：
 
 >44字节 + ret address = 44 + 4 = 48字节
 
 结果相同。
 
-最后根据自己情况，将地址跳转到somke()地址： `08048ccc <smoke>:`
+最后根据自己情况，将地址跳转到_somke()_地址： `08048ccc <smoke>:`
 
 ## title
 
