@@ -23,7 +23,7 @@
 
 
 The disassembly result of our bufbomb.
-```
+```asm
 08048ed2 <getbuf>:
  8048ed2:   83 ec 3c                sub    $0x3c,%esp
  8048ed5:   8d 44 24 10             lea    0x10(%esp),%eax
@@ -40,7 +40,7 @@ We get the same result 48.
 Finally, according to your own situation，turn the adress to the address of _somke()_ function： `08048ccc <smoke>:`
 
 十六进制结果为：
-```
+```shell
 00 00 00 00    
 00 00 00 00    
 00 00 00 00    
@@ -66,7 +66,7 @@ cc 8c 04 08
 在这个level，我们的任务是调用 *fizz()* 函数。但是fizz需要一个参数，当这个参数等于你的cookie时，才能通过升级。
 
 Let's use the following command to get our cookie.
-```
+```shell
 $ ./makecookie hanggi
 ```
 I got the value of *0x11c1be21*.
