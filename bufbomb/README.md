@@ -39,10 +39,10 @@ We get the same result 48.
 
 Finally, according to your own situation，turn the adress to the address of _somke()_ function： `08048ccc <smoke>:`
 
-> Userid: hanggi
-> Cookie: 0x11c1be21
-> Type string:Smoke!: You called smoke()
-> VAILD
+> Userid: hanggi    
+> Cookie: 0x11c1be21    
+> Type string:Smoke!: You called smoke()    
+VAILD
 > NICE JOB!
 
 
