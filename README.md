@@ -1,5 +1,12 @@
 # system programming Lab
 
+实验整体思路为，在给定的32位程序-bufbomb输入溢出内容，达到改变程序原有执行顺序。
+
+网上也有相同内容，但反汇编结果不同。
+
+## level 0
+
+
 ## title
 
 *This text will be italic*
