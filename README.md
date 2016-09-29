@@ -6,7 +6,6 @@
 
 
 
-
 gcc 常用指令
 ```bash
 $ gcc [options] <inputs>    
