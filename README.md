@@ -1,6 +1,13 @@
 # system programming
 
 
+Record of the experimental process
+
+
+
+
+
+
 ```bash
 $ echo "hell"
 $ ./makecookie haanng
