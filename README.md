@@ -104,6 +104,24 @@ readelf 常用指令
 --wide 宽行输出。 @file 可以将选项集中到一个文件中，然后使用这个@file选项载入。
 ```
 
+## NGNL
+```js
+const http = require('http');
+
+const hostname = '127.0.0.1';
+const port = 3000;
+
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Hello World\n');
+});
+
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
+```
+
 ## title
 
 *This text will be italic*
