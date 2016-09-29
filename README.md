@@ -1,5 +1,11 @@
 # system programming
 
+[![gitter][gitter-image]][gitter-url]
+  [![NPM version][npm-image]][npm-url]
+  [![build status][travis-image]][travis-url]
+  [![Test coverage][coveralls-image]][coveralls-url]
+  [![OpenCollective Backers][backers-image]](#backers)
+  [![OpenCollective Sponsors][sponsors-image]](#sponsors)
 
 ###Record of the experimental process
 
