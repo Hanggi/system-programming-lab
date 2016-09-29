@@ -9,12 +9,31 @@ Record of the experimental process
 
 
 ```bash
--o：指定生成的输出文件； 
+$ gcc [options] <inputs>    
+
+-o：指定生成的输出文件；
 -E：仅执行编译预处理；
 -S：将C代码转换为汇编代码；
 -wall：显示警告信息；
 -c：仅执行编译操作，不进行连接操作。
 
+```
+
+```
+objdump -d test    
+反汇编test中的需要执行指令的那些section    
+
+objdump -D test    
+与-d类似，但反汇编test中的所有sectiont    
+
+objdump -h testt    
+显示test的Section Header信息
+
+objdump -x testt    
+显示test的全部Header信息
+
+objdump -s testt    
+除了显示test的全部Header信息，还显示他们对应的十六进制文件代码
 ```
 
 ## title
