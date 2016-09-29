@@ -9,8 +9,12 @@ Record of the experimental process
 
 
 ```bash
-$ echo "hell"
-$ ./makecookie haanng
+-o：指定生成的输出文件； 
+-E：仅执行编译预处理；
+-S：将C代码转换为汇编代码；
+-wall：显示警告信息；
+-c：仅执行编译操作，不进行连接操作。
+
 ```
 
 ## title
