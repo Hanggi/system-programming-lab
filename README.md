@@ -27,14 +27,82 @@ $ objdump -d test
 $ objdump -D test    
 与-d类似，但反汇编test中的所有sectiont    
 
-$ objdump -h testt    
+$ objdump -h test    
 显示test的Section Header信息
 
-$ objdump -x testt    
+$ objdump -x test    
 显示test的全部Header信息
 
-$ objdump -s testt    
+$ objdump -s test    
 除了显示test的全部Header信息，还显示他们对应的十六进制文件代码
+```
+
+readelf 常用指令
+```
+-a
+--all 显示全部信息,等价于 -h -l -S -s -r -d -V -A -I.
+
+-h
+--file-header 显示elf文件开始的文件头信息.
+
+-l
+--program-headers
+--segments 显示程序头（段头）信息(如果有的话)。
+
+-S
+--section-headers
+--sections 显示节头信息(如果有的话)。 -
+
+g
+--section-groups 显示节组信息(如果有的话)。
+
+-t
+--section-details 显示节的详细信息(-S的)。
+
+-s
+--syms
+--symbols 显示符号表段中的项（如果有的话）。
+
+-e
+--headers 显示全部头信息，等价于: -h -l -S
+
+-n
+--notes 显示note段（内核注释）的信息。
+
+-r
+--relocs 显示可重定位段的信息。
+
+-u
+--unwind 显示unwind段信息。当前只支持IA64 ELF的unwind段信息。
+
+-d
+--dynamic 显示动态段的信息。
+
+-V
+--version-info 显示版本段的信息。
+
+-A
+--arch-specific 显示CPU构架信息。
+
+-D
+--use-dynamic 使用动态段中的符号表显示符号，而不是使用符号段。
+
+-x
+--hex-dump= 以16进制方式显示指定段内内容。number指定段表中段的索引,或字符串指定文件中的段名。
+
+-w[liaprmfFsoR] or --debug-dump[=line,=info,=abbrev,=pubnames,=aranges,=macro,=frames,=frames-interp,=str,=loc,=Ranges] 显示调试段中指定的内容。
+
+-I
+--histogram 显示符号的时候，显示bucket list长度的柱状图。
+
+-v
+--version 显示readelf的版本信息。
+
+-H
+--help 显示readelf所支持的命令行选项。
+
+-W
+--wide 宽行输出。 @file 可以将选项集中到一个文件中，然后使用这个@file选项载入。
 ```
 
 ## title
