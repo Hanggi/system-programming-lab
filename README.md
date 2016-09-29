@@ -1,13 +1,13 @@
 # system programming
 
 
-Record of the experimental process
+###Record of the experimental process
 
 
 
 
 
-
+gcc 常用指令
 ```bash
 $ gcc [options] <inputs>    
 
@@ -19,20 +19,21 @@ $ gcc [options] <inputs>
 
 ```
 
-```
-objdump -d test    
+objdump 常用指令
+```bash
+$ objdump -d test    
 反汇编test中的需要执行指令的那些section    
 
-objdump -D test    
+$ objdump -D test    
 与-d类似，但反汇编test中的所有sectiont    
 
-objdump -h testt    
+$ objdump -h testt    
 显示test的Section Header信息
 
-objdump -x testt    
+$ objdump -x testt    
 显示test的全部Header信息
 
-objdump -s testt    
+$ objdump -s testt    
 除了显示test的全部Header信息，还显示他们对应的十六进制文件代码
 ```
 
