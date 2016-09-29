@@ -38,7 +38,7 @@ $ objdump -s test
 ```
 
 readelf 常用指令
-```
+```bash
 -a
 --all 显示全部信息,等价于 -h -l -S -s -r -d -V -A -I.
 
@@ -51,9 +51,9 @@ readelf 常用指令
 
 -S
 --section-headers
---sections 显示节头信息(如果有的话)。 -
+--sections 显示节头信息(如果有的话)。
 
-g
+-g
 --section-groups 显示节组信息(如果有的话)。
 
 -t
