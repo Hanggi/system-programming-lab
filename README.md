@@ -122,6 +122,24 @@ server.listen(port, hostname, () => {
 });
 ```
 
+
+```js
+for (var i = 0; i < 5; ++i) {
+    setTimeout(function () {
+        console.log(i);
+    }, 1000);  
+}
+```
+```js
+var a=[];  
+for(var i = 0; i < 10; i++) {  
+    a[i] = function(){console.log("a[]:" + i)}
+}
+for(var j = 0; j < 10; j++) {
+    a[j]();
+}
+```
+
 ## title
 
 *This text will be italic*
