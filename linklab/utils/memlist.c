@@ -121,8 +121,12 @@ item *find(item *list, void *ptr)
     list = list->next;
   }
 
-  if ((list != NULL) && (list->ptr == ptr)) return list;
-  else return NULL;
+  if ((list != NULL) && (list->ptr == ptr)){
+     return list;
+  } else {
+    // printf("NULL in this pointer \n", 0);
+    return NULL;
+  } 
 }
 
 void dump_list(item *list)

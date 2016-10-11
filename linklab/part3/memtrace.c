@@ -94,40 +94,89 @@ void fini(void)
 // ...
 
 /* ****************************************************************************
-/* My code for function implementation
+/* My code - malloc/realloc/calloc/free
 /* ****************************************************************************/
 void *malloc(size_t size)  
 {  
-
 	if (!mallocp) {
 		// void *(*mallocp)(size_t size)
 		mallocp = /*(void *(*)(size_t))*/dlsym(RTLD_NEXT, "malloc");
 	}
 
-    void *ptr;  
+    void *ptr;
     ptr = mallocp(size);
 	LOG_MALLOC(size, ptr);
 
+	// 计数
 	n_malloc += size;
 	alloc_times++;
 
-
+	// 列表
 	alloc(list, ptr, size);
 
 	return ptr;
 }
 
-void free(void *p) {
+void *realloc(void *p, size_t size)  
+{  
+	if (!reallocp) {
+		// void *(*mallocp)(size_t size)
+		reallocp = /*(void *(*)(size_t))*/dlsym(RTLD_NEXT, "realloc");
+	}
 
+    void *ptr;  
+    ptr = reallocp(p, size);
+	LOG_REALLOC(p, size, ptr);
+
+	// get last alloc size
+	item *tempp = find(list, p);
+	// n_malloc -= tempp->size;
+	free_size += tempp->size;
+
+	// dealloc last p and alloc new ptr, for list
+	dealloc(list, p);
+	alloc(list, ptr, size);
+
+	// count
+	n_malloc += size;
+	alloc_times++;
+
+	return ptr;
+}
+
+void *calloc(size_t nmemb, size_t size)  
+{  
+	if (!callocp) {
+		// void *(*mallocp)(size_t size)
+		callocp = /*(void *(*)(size_t))*/dlsym(RTLD_NEXT, "calloc");
+	}
+
+    void *ptr;  
+    ptr = callocp(nmemb, size);
+	LOG_CALLOC(nmemb, size, ptr);
+
+	// list alloc
+	alloc(list, ptr, size);
+
+	// count
+	n_malloc += size;
+	alloc_times++;
+
+	return ptr;
+}
+
+void free(void *p) {
 	if (!freep) {
 		// void (*freep)(void *ptr)
 		freep = /*(void (*)(void *))*/dlsym(RTLD_NEXT, "free");
 	}
 
+	// list dealloc
+	dealloc(list, p);
+
 	LOG_FREE(p);
 	
-	// free_size++;
-	dealloc(list, p);
+	// count the size of free
 	item *tempp = find(list, p);
 	free_size += tempp->size;
 
@@ -141,7 +190,7 @@ void show_bloks(item *list) {
 	while (i != NULL) {
 
 		if (i->cnt > 0) {
-			LOG_BLOCK(i->ptr, i->size, i->cnt, "Nothing", i->ofs);
+			LOG_BLOCK(i->ptr, i->size, i->cnt, i->fname, i->ofs);
 		}
     i = i->next;
   }

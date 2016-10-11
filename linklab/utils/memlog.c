@@ -14,7 +14,9 @@ int mlog(int pc, const char *fmt, ...)
   if (pc) {
     char buf[16];
     unsigned long long ofs;
+      // printf("\n?????buf: %s, ofs: %llx \n", buf, ofs);
     if (get_callinfo(&buf[0], sizeof(buf), &ofs) != -1) {
+      // printf("\n!!!!!buf: %s, ofs: %llx \n", buf, ofs);
       res += fprintf(stderr, "%12s:%-3llx: ", buf, ofs);
     } else {
       res += fprintf(stderr, "%5c%10p : ", ' ', NULL);
