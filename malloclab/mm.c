@@ -48,14 +48,28 @@ static range_t **gl_ranges;
 
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
-// /* single word (4) or double word (8) alignment */
-// #define ALIGNMENT 8
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * defintion of Macros & Header Comment
+ * ■■■■                                                                 ■■■■■■ */
 
-// /* rounds up to the nearest multiple of ALIGNMENT */
-// #define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~0x7)
+/*	Header Comment
+
+	Structure:
+	My structure of free and allocated blocks referenced the structure show in the pdf and the textbook.
+	The memory block start with 8bit aligned header and end up with 8bit aligned footer.and the content also aligned with 8bit.
+
+	Free list:
+	In mm_init() I expanded the heap by 14 words for the free list and other initialization, because we can not use any array or struct. 
+	The first 10 words is for free, and I used best fit to get a better performance.
+	The first word for allocation request less than 32, the seccond less than 64, and so on. The last one is bigger 16384, because I have seen the *.rep files, there hardly have a size bigger than 16384.
+	And last 4 words are for Prologue and Epilogue.
+
+	Manipulate:
+	Every time we free a block, coalesce the near free block or split the big free block, I will insert a free block infomation to the proper size of free list.
+	And every time we alloc a block, before coalesce a near free block or split the big free block, I will remove the old free block from the free list.
 
 
-// #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
+*/
 
 #define WSIZE 4                     /*word size*/
 #define DSIZE 8                     /*Double word size*/
@@ -98,16 +112,17 @@ void remove_free_block(char *p);
 char *get_freeCategory_root(size_t size);
 
 /*aux function for mm_realloc*/
-static void *realloc_coalesce(void *bp,size_t newSize,int *isNextFree);
-static void realloc_place(void *bp,size_t asize);
+// static void *realloc_coalesce(void *bp,size_t newSize,int *isNextFree);
+// static void realloc_place(void *bp,size_t asize);
 
 static char *heap_listp = NULL;
 static char *block_list_start = NULL;
 
+/* Definition of the DEBUG */
+// #define DEBUG
 
-
-
-
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
 
 
 /* 
@@ -139,25 +154,36 @@ int mm_init(range_t **ranges)
 {
   /* YOUR IMPLEMENTATION */
 
-  if((heap_listp = mem_sbrk(12*WSIZE))==(void *)-1) return -1;
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Code of mm_init()
+ * ■■■■                                                                  ■■■■■ */
+	if((heap_listp = mem_sbrk(14*WSIZE))==(void *)-1) return -1;
 
-    PUT(heap_listp,0);              /*block size list<=32*/
-    PUT(heap_listp+(1*WSIZE),0);    /*block size list<=64*/
-    PUT(heap_listp+(2*WSIZE),0);    /*block size list<=128*/
-    PUT(heap_listp+(3*WSIZE),0);    /*block size list<=256*/
-    PUT(heap_listp+(4*WSIZE),0);    /*block size list<=512*/
-    PUT(heap_listp+(5*WSIZE),0);    /*block size list<=2048*/
-    PUT(heap_listp+(6*WSIZE),0);    /*block size list<=4096*/
-    PUT(heap_listp+(7*WSIZE),0);    /*block size list>4096*/
-    PUT(heap_listp+(8*WSIZE),0);	/* for alignment*/
-    PUT(heap_listp+(9*WSIZE),PACK(DSIZE,1));
-    PUT(heap_listp+(10*WSIZE),PACK(DSIZE,1));
-    PUT(heap_listp+(11*WSIZE),PACK(0,1));
+		PUT(heap_listp,0);              				/*block size list<=32*/
+		PUT(heap_listp+(1*WSIZE),0);   				 	/*block size list<=64*/
+		PUT(heap_listp+(2*WSIZE),0);    				/*block size list<=128*/
+		PUT(heap_listp+(3*WSIZE),0);    				/*block size list<=256*/
+		PUT(heap_listp+(4*WSIZE),0);    				/*block size list<=512*/
+		PUT(heap_listp+(5*WSIZE),0);   				 	/*block size list<=2048*/
+		PUT(heap_listp+(6*WSIZE),0);    				/*block size list<=4096*/
+		PUT(heap_listp+(7*WSIZE),0);    				/*block size list<=8192*/
+		PUT(heap_listp+(8*WSIZE),0);    				/*block size list<=16384*/
+		PUT(heap_listp+(9*WSIZE),0);    				/*block size list>16384*/
+		PUT(heap_listp+(10*WSIZE),0);					/* for alignment*/
+		PUT(heap_listp+(11*WSIZE),PACK(DSIZE,1));   	/* Prologue header */
+		PUT(heap_listp+(12*WSIZE),PACK(DSIZE,1));		/* Prologue footer */
+		PUT(heap_listp+(13*WSIZE),PACK(0,1));			/* Epilogue header */
 
-    block_list_start = heap_listp;
-    heap_listp += (10*WSIZE);
+		block_list_start = heap_listp;
+		heap_listp += (12*WSIZE);
 
-    if((extend_heap(CHUNKSIZE/DSIZE))==NULL) return -1;
+		#ifdef DEBUG
+			printf("\n\n\033[1;33m■ ■■■■■■■■■■■■■■■■■■■ ■\033[0m\n■ \033[1;33m初始化heap_star: %p\033[0m \n■   \033[1;35mstart address: %p \033[0m", heap_listp, block_list_start);
+		#endif
+
+		if((extend_heap(CHUNKSIZE/DSIZE))==NULL) return -1;
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
 
   /* DON't MODIFY THIS STAGE AND LEAVE IT AS IT WAS */
   gl_ranges = ranges;
@@ -179,7 +205,10 @@ void* mm_malloc(size_t size)
   //   *(size_t *)p = size;
   //   return (void *)((char *)p + SIZE_T_SIZE);
   // }
-      size_t asize;
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Code of mm_malloc
+ * ■■■■                                                                 ■■■■■■ */
+    size_t asize;
     size_t extendsize;
     char *bp;
     if(size ==0) return NULL;
@@ -189,9 +218,21 @@ void* mm_malloc(size_t size)
     }else{
         asize = (DSIZE)*((size+(DSIZE)+(DSIZE-1)) / (DSIZE));
     }
+
+	#ifdef DEBUG
+		printf("\n\033[1;33m■\033[0m\ \033[1;34m进入Malloc\033[0m \n");
+		printf("■        \033[1;36m申请size: %d\033[0m \n", size);
+		printf("■      \033[0;36m处理后size: %d \033[0m", asize);
+	#endif
     
     if((bp = find_fit(asize))!= NULL){
         place(bp,asize);
+
+		#ifdef DEBUG
+			printf("\n■       \033[1;36m头address: %p\033[0m", bp);
+			printf("\n■      \033[1;36m get_Alloc: %d\033[0m", GET_ALLOC(HDRP(bp)));
+		#endif
+
         return bp;
     }
 
@@ -201,25 +242,44 @@ void* mm_malloc(size_t size)
         return NULL;
     }
     place(bp,asize);
+
+	#ifdef DEBUG
+		printf("\n■       \033[1;33m经过一次extend\033[0m");
+		printf("\n■       \033[1;36m头address: %p\033[0m", bp);
+		printf("\n■      \033[1;36m get_Alloc: %d\033[0m", GET_ALLOC(HDRP(bp)));
+	#endif
+
     return bp;
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
 }
 
 /*
- * mm_free - Freeing a block does nothing.
+ * mm_free - Freeing a block.
  */
 void mm_free(void *bp)
 {
   /* YOUR IMPLEMENTATION */
-
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Code of mm_free
+ * ■■■■                                                                 ■■■■■■ */
    if(bp == 0)
         return;
     size_t size = GET_SIZE(HDRP(bp));
+
+	#ifdef DEBUG
+		printf("\n\033[0;32;32m■ 进入Free\033[0m \n");
+		printf("■          \033[0;32;31m释放address: %p\033[0m \n", bp);
+		printf("■             \033[1;31m释放大小: %d \033[0m\n", size);
+	#endif
 
     PUT(HDRP(bp), PACK(size, 0));
     PUT(FTRP(bp), PACK(size, 0));
     PUT(NEXT_LINKNODE_RP(bp),NULL);
     PUT(PREV_LINKNODE_RP(bp),NULL);
     coalesce(bp);
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
 
   /* DON't MODIFY THIS STAGE AND LEAVE IT AS IT WAS */
   if (gl_ranges)
@@ -239,25 +299,58 @@ void* mm_realloc(void *ptr, size_t t)
  */
 void mm_exit(void)
 {
-	#ifdef DEBUG
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Code of mm_exit()
+ * ■■■■                                                                 ■■■■■■ */
     void* p1 = mem_heap_lo();
     void* p2 = mem_heap_hi();
+	#ifdef DEBUG
     int i1 = mem_heapsize();
     int i2 = mem_pagesize();
 
-	printf("%p \n", p1);
-	printf("%p \n", p2);
-
-	printf("%d \n", i1);
-	printf("%d \n", i2);
+	// printf("\n%p \n", p1);
+	// printf("%p \n", p2);
+	// printf("%d \n", i1);
+	// printf("%d \n", i2);
 	#endif
+
+	void* p =heap_listp + 8;
+
+	while (p) {
+
+		size_t  foot_alloc = GET_ALLOC(FTRP(p));
+		size_t  head_alloc = GET_ALLOC(HDRP(p));
+
+		if (head_alloc) {
+			#ifdef DEBUG
+			printf("\n\033[0;35mMemory in %p is %d unfreed\033[0m\n", p, head_alloc);
+			#endif
+
+			mm_free(p);
+		}else {
+			#ifdef DEBUG
+			printf("\n\033[0;32;32mMemory in %p is %d freed\033[0m\n", p, head_alloc);
+			#endif
+		}
+		p = NEXT_BLKP(p);
+
+		if (p > p2) {
+			#ifdef DEBUG
+			printf("%p > %p \n", p, p1);
+			#endif
+			p = NULL;
+		}
+
+	}
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
 }
 
 
-/*********************************************************
- * Auxiliary Function 
- ********************************************************/
- /*
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Implementation of functions
+ * ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
+/*
  *	get_freeCategory_root - get the free list category fit the given size
  */
 inline char *get_freeCategory_root(size_t size)
@@ -272,7 +365,9 @@ inline char *get_freeCategory_root(size_t size)
     else if(size<=512) i= 4;
     else if(size<=2048) i= 5;
     else if(size<=4096) i= 6;
-    else i= 7;
+    else if(size<=8192) i= 7;
+    else if(size<=16384) i= 8;
+    else i= 9;
     /*find the index of bin which will put this block */
     return block_list_start+(i*WSIZE);
 }
@@ -425,6 +520,7 @@ static void place(void *bp,size_t asize)
     remove_free_block(bp);/*remove from empty_list*/
     if((csize-asize)>=(MINFB_SIZE*DSIZE))
     {
+		// if the free block bigger than asize
         PUT(HDRP(bp),PACK(asize,1));
         PUT(FTRP(bp),PACK(asize,1));
         bp = NEXT_BLKP(bp);
@@ -442,3 +538,21 @@ static void place(void *bp,size_t asize)
         PUT(FTRP(bp),PACK(csize,1));
     }
 }
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
+
+
+
+
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Implementation of mm_check()
+ * ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
+
+int mm_check(void) {
+
+
+}
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
