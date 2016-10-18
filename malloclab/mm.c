@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+ 
 
 #include "mm.h"
 #include "memlib.h"
@@ -111,15 +112,15 @@ void insert_free_block(char *p);
 void remove_free_block(char *p);
 char *get_freeCategory_root(size_t size);
 
-/*aux function for mm_realloc*/
 // static void *realloc_coalesce(void *bp,size_t newSize,int *isNextFree);
 // static void realloc_place(void *bp,size_t asize);
 
 static char *heap_listp = NULL;
 static char *block_list_start = NULL;
 
-/* Definition of the DEBUG */
+/* Definition of the DEBUG and MM_CHECKER */
 // #define DEBUG
+// #define MMCHECK
 
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
@@ -278,6 +279,7 @@ void mm_free(void *bp)
     PUT(NEXT_LINKNODE_RP(bp),NULL);
     PUT(PREV_LINKNODE_RP(bp),NULL);
     coalesce(bp);
+
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
 
@@ -299,12 +301,15 @@ void* mm_realloc(void *ptr, size_t t)
  */
 void mm_exit(void)
 {
+    #ifdef MMCHECK
+        mm_check();
+    #endif
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
  * Code of mm_exit()
  * ■■■■                                                                 ■■■■■■ */
-    void* p1 = mem_heap_lo();
     void* p2 = mem_heap_hi();
 	#ifdef DEBUG
+    void* p1 = mem_heap_lo();
     int i1 = mem_heapsize();
     int i2 = mem_pagesize();
 
@@ -314,11 +319,11 @@ void mm_exit(void)
 	// printf("%d \n", i2);
 	#endif
 
-	void* p =heap_listp + 8;
+	void* p = heap_listp + 8;
 
 	while (p) {
 
-		size_t  foot_alloc = GET_ALLOC(FTRP(p));
+		// size_t  foot_alloc = GET_ALLOC(FTRP(p));
 		size_t  head_alloc = GET_ALLOC(HDRP(p));
 
 		if (head_alloc) {
@@ -342,6 +347,9 @@ void mm_exit(void)
 		}
 
 	}
+
+    
+
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
 }
@@ -436,6 +444,7 @@ static void *coalesce(void *bp)
     }
     /*insert the new free block*/
     insert_free_block(bp);
+
     return bp;
 }
 /*
@@ -481,8 +490,7 @@ inline void remove_free_block(char *p)
     if(prevp == NULL){
         if(nextp != NULL)PUT(PREV_LINKNODE_RP(nextp),0);
         PUT(root,nextp);
-    }
-    else{
+    } else {
         if(nextp != NULL)PUT(PREV_LINKNODE_RP(nextp),prevp);
         PUT(NEXT_LINKNODE_RP(prevp),nextp);
     }
@@ -548,11 +556,186 @@ static void place(void *bp,size_t asize)
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
  * Implementation of mm_check()
  * ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
-
+#ifdef MMCHECK
 int mm_check(void) {
+
+    int c1 = CheckedFreeMarkedInFreeList();
+    int c2 = checkEscapedCoalesce();
+    int c3 = isEveryFreeBlockInFreeList();
+    int c4 = checkPointerInFreeListValid();
+    int c5 = checkPointerInHeapBlockValid();
+
+    if (c1 > 0) {
+        printf("\n\033[0;32;32m[MM_Checker]All free block in Free List are marked free.\033[0m\n");
+    }
+    if (c2 > 0) {
+        printf("\n\033[0;32;32m[MM_Checker]No free block escaped coalesce.\033[0m\n");
+    }
+    if (c3 > 0) {
+        printf("\n\033[0;32;32m[MM_Checker]Every block in the Free List.\033[0m\n");
+    }
+    if (c4 > 0) {
+        printf("\n\033[0;32;32m[MM_Checker]Every Pointer in Free List is valid.\033[0m\n");
+    }
+    if (c5 > 0) {
+        printf("\n\033[0;32;32m[MM_Checker]Every Pointer in Heap is valid.\033[0m\n");
+    }
 
 
 }
 
+// Check every block in the free list marked free by forloop{} and GET_ALLOC()
+int CheckedFreeMarkedInFreeList() {
+	int i;
+    void *p = mem_heap_lo();
+	// void *p = heap_listp - 12 * WSIZE;
+
+	int res = 1;
+
+	for (i = 0; i < 10; i++) {
+		void* tmpP = p + (i * WSIZE);
+
+		// printf("\n\neach pointer %p \n", tmpP);
+		// printf("each pointer %p \n", GET(tmpP));
+		if (GET(tmpP) == NULL) {
+			// SKIP empty item in list
+		} else {
+			size_t  head_alloc = GET_ALLOC(GET(tmpP));
+			// printf("\n\n\nwhether allocated %d \n", head_alloc);
+
+			if (!head_alloc) {
+				// printf("No.%d is marked free.\n", i+1);
+			}else {
+				printf("No.%d didn't' marked free!\n", i+1);
+				res = 0;
+			}
+		}
+	}
+
+	return res;
+}
+
+// check whether one free block's contiguous block is free
+int checkEscapedCoalesce() {
+	void* p = heap_listp + 8;
+    void* p2 = mem_heap_hi();
+	int res = 1;
+
+	void* lastP = NULL;
+
+	while (p) {
+		size_t  head_alloc = GET_ALLOC(HDRP(p));
+
+		if (head_alloc) {
+			// SKIP allocated block
+		}else {
+			if (lastP != NULL && NEXT_BLKP(lastP) == p) {
+				res = 0;
+				printf("%p and %p is didn't coalesced yet!", lastP, p);
+			}else {
+                // printf("1111");
+            }
+
+			lastP = p;
+		}
+		p = NEXT_BLKP(p);
+
+		if (p > p2) {
+			p = NULL;
+		}
+	}
+
+	return res;
+}
+
+// Check every block whether in free list
+int isEveryFreeBlockInFreeList() {
+	void* p = heap_listp + 8;
+    void* p2 = mem_heap_hi();
+	int res = 1;
+
+	while (p) {
+		size_t  head_alloc = GET_ALLOC(HDRP(p));
+
+		if (head_alloc) {
+			// SKIP allocated block
+		}else {
+			int i;
+			int isExist = 0;
+			for (i = 0; i < 10; i++) {
+				void* tmpP = p + (i * WSIZE);
+
+				if (&GET(tmpP) == p) {
+					isExist = 1;
+				}
+			}
+            
+			if (isExist <= 0) {
+				res = 0;
+			}
+		}
+		p = NEXT_BLKP(p);
+
+		if (p > p2) {
+			p = NULL;
+		}
+	}
+
+	return res;
+}
+
+int checkPointerInFreeListValid() {
+    void *p = mem_heap_lo();
+	// void *p = heap_listp - 12 * WSIZE;
+
+	int res = 1;
+
+	int i;
+	for (i = 0; i < 10; i++) {
+		void* tmpP = p + (i * WSIZE);
+
+		if (GET(tmpP) == NULL) {
+			// SKIP empty item in list
+		} else {
+			size_t  head_size = GET_SIZE(HDRP(GET(tmpP)));
+			// printf("\n\n\nwhether allocated %d \n", head_alloc);
+
+			if (head_size > 0) {
+				// if greater than 0 it's valid
+			} else {
+				res = 0;
+			}
+		}
+	}
+
+    return res;
+}
+
+// check the pointer whether it is smaller than last byte and bigger than first byte.
+int checkPointerInHeapBlockValid() {
+    void* p1 = mem_heap_lo();
+	void* p2 = mem_heap_hi();
+
+    int res = 1;
+
+	int i;
+	for (i = 0; i < 10; i++) {
+		void* tmpP = p1 + (i * WSIZE);
+
+		if (GET(tmpP) == NULL) {
+			// SKIP empty item in list
+		} else {
+            
+			if (GET(tmpP) > p1 && GET(tmpP) < p2) {
+                
+            } else {
+                res = 0;
+            }
+		}
+	}
+
+    return res;
+}
+#endif
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
