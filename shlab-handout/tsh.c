@@ -206,7 +206,7 @@ void eval(char *cmdline)
 	int fOrb;
 	pid_t pid;
 	int jid;
-	sigset_t mask;			/* mask */
+	// sigset_t mask;			/* mask */
 	strcpy(buffer, cmdline);
 	fOrb = parseline(buffer, argv);
 
@@ -221,13 +221,13 @@ void eval(char *cmdline)
 			fflush(stdout);
 		#endif
 
-		sigemptyset(&mask);
-		sigaddset(&mask, SIGCHLD);
-		sigprocmask(SIG_BLOCK, &mask, NULL); /* Block SIGCHLD */
+		// sigemptyset(&mask);
+		// sigaddset(&mask, SIGCHLD);
+		// sigprocmask(SIG_BLOCK, &mask, NULL); /* Block SIGCHLD */
 		
 		if ((pid = fork()) == 0) {
 			setpgid(0, 0);
-			sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
+			// sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
 			// printf("---%s", argv[0]);
 			// printf("child id: %d\n", getpid());
 			if (execve(argv[0], argv, environ) < 0) {
@@ -249,14 +249,14 @@ void eval(char *cmdline)
 			addjob(jobs, pid, BG, cmdline);
 			jid = pid2jid(pid);
 			printf("[%d] (%d) %s", jid, pid, cmdline);
-			sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
+			// sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
 		}else {
 			// if it is a foreground job, parent wait
 			#ifdef DEBUG
 				printf("\033[0;35m(%d)job run in foreground! \033[0m\n", pid);
 			#endif
 			addjob(jobs, pid, FG, cmdline);
-			sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
+			// sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
 			waitfg(pid);
 		}
 	}
@@ -485,6 +485,9 @@ void waitfg(pid_t pid)
 
 		pause();
 	}
+	// while (pid == fgpid(jobs)){
+    //     sleep(0);
+    // }
 
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
@@ -520,25 +523,37 @@ void sigchld_handler(int sig)
 
 	getIntOrStp = 0;
 	
-	// while ((pid = waitpid(-1, NULL, WNOHANG | WUNTRACED)) > 0) {
-	while ((pid = testWait()) > 0) {
+	while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
+	// while ((pid = testWait()) > 0) {
 
-		// if (WIFSTOPPED(status)) {
-		// 	printf("!Job [%d] (%d) stopped by signal %d\n", pid2jid(pid), pid, WSTOPSIG(status));
-		// }
-	
 		#ifdef DEBUG
 			temppid = pid;
 			printf("\033[1;30mBefore delete get pid: %d fgpid: %d \033[0m\n", pid, foregroundPid);
 		#endif
+		
 		jid = pid2jid(pid);
 		if (FG == jobs[jid-1].state) {
 			getIntOrStp = 1;
 		}
-		deletejob(jobs, foregroundPid);
+		
+		if (WIFSTOPPED(status)) {
+			printf("Job [%d] (%d) stopped by signal %d\n", pid2jid(pid), pid, WSTOPSIG(status));
+			fflush(stdout);
+
+			jobs[jid-1].state = ST;
+		} else if (WIFSIGNALED(status)) {
+			printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, SIGINT);
+			fflush(stdout);
+
+			deletejob(jobs, foregroundPid);
+		} else {
+			deletejob(jobs, foregroundPid);
+		}
+	
+		
 
 		#ifdef DEBUG
-			// printf("\033[0;32;34mDelete pid:\033[0m %d \n", temppid);
+			printf("\033[0;32;34mDelete pid:\033[0m %d \n", temppid);
 			printf("\033[1;33m[SIGCHLD]A Child finished and told his father [%d] \033[0m \n", sig);
 			fflush(stdout);
 		#endif
@@ -564,11 +579,11 @@ void sigint_handler(int sig)
  * ■■■■                                                                 ■■■■■■ */
  	
 	pid_t pid;
-	int jid;
 	pid = fgpid(jobs);
-	jid = pid2jid(pid);
 	
 	#ifdef DEBUG
+		int jid;
+		jid = pid2jid(pid);
 		printf("\033[1;33m[SIGINT]You pressed ctrl+c, \033[0m \n");
 		printf("\033[1;30mNo.%d---------------------------------------------------\033[0m\n", ++STEPINDEX);
 		printf("\033[1;36mpid: %d jid: %d in interrupt handdler \033[0m\n", pid, jid);
@@ -580,8 +595,7 @@ void sigint_handler(int sig)
 		return;
 	}
 	
- 	printf("Job [%d] (%d) terminated by signal %d\n", jid, pid, sig);
- 	// exit(0);
+ 	// printf("!Job [%d] (%d) terminated by signal %d\n", jid, pid, sig);
 
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
@@ -614,13 +628,13 @@ void sigtstp_handler(int sig)
 	getIntOrStp = 1;
 	
 	#ifdef DEBUG
-		printf("\033[1;33m[SIGSTP]You pressed ctrl+z, \033[0m\n");
 		printf("\033[1;30mNo.%d---------------------------------------------------\033[0m\n", ++STEPINDEX);
+		printf("\033[1;33m[SIGSTP]You pressed ctrl+z, \033[0m\n");
 		// printf("job[%d](%d) suspended! \n", jid, pid);
 		printf("\033[1;36mpid: %d jid: %d in stop handdler \033[0m\n", pid, jid);
 		fflush(stdout);
 	#endif
-	printf("Job [%d] (%d) stopped by signal %d\n", jid, pid, sig);
+	// printf("!Job [%d] (%d) stopped by signal %d\n", jid, pid, sig);
  	// exit(0);
 
 /* ■■■■                                                                 ■■■■■■ */
