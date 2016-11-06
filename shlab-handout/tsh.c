@@ -4,8 +4,8 @@
  *
  * tsh - A tiny shell program with job control
  *
- * Name: <fill in>
- * Student id: <fill in>
+ * Name: <CUI HANGQI>
+ * Student id: <2016-27542>
  *
  */
 #include <stdio.h>
@@ -17,6 +17,26 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Include and Declation
+ * ■■■■                                                                 ■■■■■■ */
+#include <string.h>
+
+void checkQuit(char *cmd);
+pid_t testWait();
+
+static int getIntOrStp = 0;
+
+// Switch of debug definition
+// #define DEBUG
+
+#ifdef DEBUG
+	static int STEPINDEX = 0;
+#endif
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
+
 
 /* Misc manifest constants */
 #define MAXLINE    1024   /* max line size */
@@ -138,6 +158,8 @@ int main(int argc, char **argv)
   /* Initialize the job list */
   initjobs(jobs);
 
+//   printf("parent id: %d \n", getpid());
+  fflush(stdout);
   /* Execute the shell's read/eval loop */
   while (1) {
 
@@ -175,10 +197,73 @@ int main(int argc, char **argv)
  */
 void eval(char *cmdline)
 {
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Eval function
+ * ■■■■                                                                 ■■■■■■ */
 
-	
-	printf("== %s \n", cmdline);
+ 	char *argv[MAXARGS];
+	char buffer[MAXLINE];
+	int fOrb;
+	pid_t pid;
+	int jid;
+	sigset_t mask;			/* mask */
+	strcpy(buffer, cmdline);
+	fOrb = parseline(buffer, argv);
 
+	if (NULL == argv[0]) {
+		return; 	/* Ignore empty lines */
+	}
+
+	if (!builtin_cmd(argv)) {
+		#ifdef DEBUG
+			printf("\033[1;30mNo.%d------------otherwise------------------------------\033[0m\n", ++STEPINDEX);
+			printf("<<< \033[1;32m%s\033[0m\n", cmdline);
+			fflush(stdout);
+		#endif
+
+		sigemptyset(&mask);
+		sigaddset(&mask, SIGCHLD);
+		sigprocmask(SIG_BLOCK, &mask, NULL); /* Block SIGCHLD */
+		
+		if ((pid = fork()) == 0) {
+			setpgid(0, 0);
+			sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
+			// printf("---%s", argv[0]);
+			// printf("child id: %d\n", getpid());
+			if (execve(argv[0], argv, environ) < 0) {
+				printf("%s: Command not found\n", argv[0]);
+				exit(0);
+			}
+		}
+
+		#ifdef DEBUG
+			// printf("\033[0;37m{{forked pid: %d \033[0m\n", pid);
+		#endif
+
+		if (fOrb) {
+			// if it is a background job, parent add job 
+			#ifdef DEBUG
+				printf("\033[0;32;34mAddpid:\033[0m %d \n", pid);
+			#endif
+
+			addjob(jobs, pid, BG, cmdline);
+			jid = pid2jid(pid);
+			printf("[%d] (%d) %s", jid, pid, cmdline);
+			sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
+		}else {
+			// if it is a foreground job, parent wait
+			#ifdef DEBUG
+				printf("\033[0;35m(%d)job run in foreground! \033[0m\n", pid);
+			#endif
+			addjob(jobs, pid, FG, cmdline);
+			sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
+			waitfg(pid);
+		}
+	}
+
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
 }
 
@@ -245,6 +330,45 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv)
 {
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * built in command
+ * ■■■■                                                                 ■■■■■■ */
+ 	// printf("==%s \n", argv[0]);
+	// printf("==%s \n", argv[1]);
+	// fflush(stdout);
+
+	if (!strcmp(argv[0], "quit")) {
+		// If quit
+		//  kill(0, SIGQUIT);
+
+		#ifdef DEBUG
+			printf("\033[1;31mQuit!\033[0m \n");
+		#endif
+		exit(0);
+	}else if (0 == strcmp(argv[0], "jobs")) {
+		// If jobs
+		#ifdef DEBUG
+			printf("\033[1;30mNo.%d-----------------------jobs------------------------\033[0m\n", ++STEPINDEX);
+		#endif
+		// printf("INTO jobs\n");
+		
+		listjobs(jobs);
+		return 1;
+	}else if (0 == strcmp(argv[0], "bg") || 0 == strcmp(argv[0], "fg")) {
+		// If bg or fg
+		#ifdef DEBUG
+			printf("\033[1;30mNo.%d-----------------------bgfg------------------------\033[0m\n", ++STEPINDEX);
+		#endif
+		// printf("INTO do_bgfg\n");
+		do_bgfg(argv);
+		return 1;
+	}
+
+		// printf("NOT INTO ANY\n");
+		// fflush(stdout);
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return 0;     /* not a builtin command */
 }
 
@@ -253,6 +377,85 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv)
 {
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * do bg or fg.
+ * ■■■■                                                                 ■■■■■■ */
+	
+	int jid;
+	pid_t pid;
+	struct job_t *job;
+
+
+	//error handdling, check arguments exist
+	if (NULL == argv[1]) {
+		printf("%s command requires PID or %%jobid argument\n", argv[0]);
+		return;
+	}
+	// check first char valid
+	if ('%' != argv[1][0] && (argv[1][0] > '9' || argv[1][0] < '0')) {
+		printf("%s: argument must be a pid or %%jobid\n", argv[0]);
+		return;
+	}
+
+	if ('%' == argv[1][0]) {
+		// If search by jid
+		jid = atoi(argv[1]+1);
+		job = getjobjid(jobs, jid);
+
+		if (NULL == job) {
+			printf("%s: No such job\n", argv[1]);
+			return;
+		}
+
+		pid = jobs[jid - 1].pid;
+	} else {
+		// else by pid
+		int index = 0;
+
+		char *str;
+		str = (char *) malloc ((strlen(argv[1])+1) * sizeof(char));
+		str[0] = '\0';
+		while ('\0' != argv[1][index] && (argv[1][index] >= '0' && argv[1][index] <= '9')) {
+			str[index] = argv[1][index];
+			++index;
+		}
+
+		str[index] = '\0';
+		pid = atoi(str);
+		jid = pid2jid(pid);
+		job = getjobpid(jobs, pid);
+
+		if (NULL == job) {
+			printf("(%s): No such process\n", str);
+			return;
+		}
+	}
+
+	#ifdef DEBUG
+		// printf("\033[1;30mNo.%d---------------bg or fg----------------------------\033[0m\n", ++STEPINDEX);
+ 		// // printf("<<< \033[1;32m%s\033[0m\n", cmdline);
+		// fflush(stdout);
+	#endif
+
+	// deal bg gf, send SIGCONT.
+	if (0 == strcmp(argv[0], "bg")) {
+		if (kill(-pid, SIGCONT) < 0) {
+			fprintf(stdout, "\033[0;32;31mkill error in SIGCONT to bg\033[0m\n");
+			return;
+		}
+		jobs[jid-1].state = BG;
+		printf("[%d] (%d) %s", jid, pid, jobs[jid-1].cmdline);
+	} else { 	/* fg */
+		if (kill(-pid, SIGCONT) < 0) {
+			fprintf(stdout, "\033[0;32;31mkill error in SIGCONT to fg\033[0m\n");
+			return;
+		}
+		jobs[jid-1].state = FG;
+		waitfg(pid);
+	}
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
+
   return;
 }
 
@@ -261,6 +464,30 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * built in command
+ * ■■■■                                                                 ■■■■■■ */
+
+	#ifdef DEBUG
+		pid_t foregroundPid;
+		foregroundPid = fgpid(jobs);
+		printf("\033[1;30m fgpid: %d, argpid: %d \033[0m\n", foregroundPid, pid);
+	#endif
+
+	getIntOrStp = 0;
+
+	pause();
+	
+	if (!getIntOrStp) {
+		#ifdef DEBUG
+			printf("pause 1 more time for ctrl+z\n");
+		#endif
+
+		pause();
+	}
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
 }
 
@@ -277,6 +504,51 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig)
 {
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Signal Child Handler
+ * ■■■■                                                                 ■■■■■■ */
+ 	
+	int status;
+	pid_t pid;
+	#ifdef DEBUG
+		pid_t temppid;
+		printf("\033[1;31m{SIGCHLD}\033[0m");
+	#endif
+	int jid;
+	pid_t foregroundPid;
+	foregroundPid = fgpid(jobs);
+
+	getIntOrStp = 0;
+	
+	// while ((pid = waitpid(-1, NULL, WNOHANG | WUNTRACED)) > 0) {
+	while ((pid = testWait()) > 0) {
+
+		// if (WIFSTOPPED(status)) {
+		// 	printf("!Job [%d] (%d) stopped by signal %d\n", pid2jid(pid), pid, WSTOPSIG(status));
+		// }
+	
+		#ifdef DEBUG
+			temppid = pid;
+			printf("\033[1;30mBefore delete get pid: %d fgpid: %d \033[0m\n", pid, foregroundPid);
+		#endif
+		jid = pid2jid(pid);
+		if (FG == jobs[jid-1].state) {
+			getIntOrStp = 1;
+		}
+		deletejob(jobs, foregroundPid);
+
+		#ifdef DEBUG
+			// printf("\033[0;32;34mDelete pid:\033[0m %d \n", temppid);
+			printf("\033[1;33m[SIGCHLD]A Child finished and told his father [%d] \033[0m \n", sig);
+			fflush(stdout);
+		#endif
+	}
+	//  printf("--pid: %d in sigchld \n", pid);
+	
+ 	// exit(0);
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
 }
 
@@ -287,6 +559,33 @@ void sigchld_handler(int sig)
  */
 void sigint_handler(int sig)
 {
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Signal Interrupt Handler
+ * ■■■■                                                                 ■■■■■■ */
+ 	
+	pid_t pid;
+	int jid;
+	pid = fgpid(jobs);
+	jid = pid2jid(pid);
+	
+	#ifdef DEBUG
+		printf("\033[1;33m[SIGINT]You pressed ctrl+c, \033[0m \n");
+		printf("\033[1;30mNo.%d---------------------------------------------------\033[0m\n", ++STEPINDEX);
+		printf("\033[1;36mpid: %d jid: %d in interrupt handdler \033[0m\n", pid, jid);
+		fflush(stdout);
+	#endif
+	// getIntOrStp = 1;
+	if (kill(-pid, SIGINT) < 0) {
+		fprintf(stdout, "\033[0;32;31mkill (%d) error in SIGINT\033[0m\n", pid);
+		return;
+	}
+	
+ 	printf("Job [%d] (%d) terminated by signal %d\n", jid, pid, sig);
+ 	// exit(0);
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
+
   return;
 }
 
@@ -297,6 +596,35 @@ void sigint_handler(int sig)
  */
 void sigtstp_handler(int sig)
 {
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Signal stop Handler
+ * ■■■■                                                                 ■■■■■■ */
+ 	pid_t pid;
+	pid = fgpid(jobs);
+	
+	if (kill(-pid, SIGTSTP) < 0) {
+		fprintf(stdout, "\033[0;32;31mkill error in SIGSTSP\033[0m\n");
+		return;
+	}
+	int jid;
+	jid = pid2jid(pid);
+	jobs[jid-1].state = ST;
+	// printf("job[%d] stopped which pid: %d \n", jid, pid);
+
+	getIntOrStp = 1;
+	
+	#ifdef DEBUG
+		printf("\033[1;33m[SIGSTP]You pressed ctrl+z, \033[0m\n");
+		printf("\033[1;30mNo.%d---------------------------------------------------\033[0m\n", ++STEPINDEX);
+		// printf("job[%d](%d) suspended! \n", jid, pid);
+		printf("\033[1;36mpid: %d jid: %d in stop handdler \033[0m\n", pid, jid);
+		fflush(stdout);
+	#endif
+	printf("Job [%d] (%d) stopped by signal %d\n", jid, pid, sig);
+ 	// exit(0);
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
 }
 
@@ -521,3 +849,15 @@ void sigquit_handler(int sig)
 
 
 
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
+ * Custom function implementation
+ * ■■■■                                                                 ■■■■■■ */
+  
+pid_t testWait() {
+	pid_t xx = waitpid(-1, NULL, WNOHANG | WUNTRACED);
+	// printf("{%d}\n", xx);
+	return xx;
+}
+
+/* ■■■■                                                                 ■■■■■■ */
+/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
