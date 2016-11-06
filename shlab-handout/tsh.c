@@ -4,8 +4,8 @@
  *
  * tsh - A tiny shell program with job control
  *
- * Name: <CUI HANGQI>
- * Student id: <2016-27542>
+ * Name: <fill in>
+ * Student id: <fill in>
  *
  */
 #include <stdio.h>
@@ -17,17 +17,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
-
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
- * Include and Declation
- * ■■■■                                                                 ■■■■■■ */
-#include <string.h>
-
-void checkQuit(char *cmd);
-
-/* ■■■■                                                                 ■■■■■■ */
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
-
 
 /* Misc manifest constants */
 #define MAXLINE    1024   /* max line size */
@@ -186,50 +175,10 @@ int main(int argc, char **argv)
  */
 void eval(char *cmdline)
 {
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
- * Eval function
- * ■■■■                                                                 ■■■■■■ */
-
- 	char *argv[MAXARGS];
-	char buffer[MAXLINE];
-	int trueOrFalse;
-	pid_t pid;
-	// pid_t pid; 		/* Process id */
-	// int jid;
-	// sigset_t mask;
-	strcpy(buffer, cmdline);
-	trueOrFalse = parseline(buffer, argv);
-
-	if (NULL == argv[0]) {
-		return; 	/* Ignore empty lines */
-	}
-
-	if (!builtin_cmd(argv)) {
- 		printf("<<< \033[1;32m%s\033[0m\n", cmdline);
-		
-		if ((pid = fork()) == 0) { 	/* child runs user job */
-			// Setpgid(0, 0); 		/* set child group pid */
-			// sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
-			printf("%s", argv[0]);
-			if (execve(argv[0], argv, environ) < 0) {
-				printf("\033[1;33m%s: Command not found.\033[0m\n", argv[0]);
-				exit(0);
-			}
-		}
-
-
-		waitfg(pid);
-
-		if (trueOrFalse) {
-
-		}
-	}
-
 
 	
+	printf("== %s \n", cmdline);
 
-/* ■■■■                                                                 ■■■■■■ */
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
 }
 
@@ -296,19 +245,6 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv)
 {
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
- * built in command
- * ■■■■                                                                 ■■■■■■ */
-
- 	if (!strcmp(argv[0], "quit")) {
-		//  kill(0, SIGQUIT);
- 		printf("\033[1;31mQuit!\033[0m \n");
-		exit(0);
-	 }
-	 
-
-/* ■■■■                                                                 ■■■■■■ */
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return 0;     /* not a builtin command */
 }
 
@@ -325,14 +261,6 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
- * built in command
- * ■■■■                                                                 ■■■■■■ */
-
-	pause();
-
-/* ■■■■                                                                 ■■■■■■ */
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
 }
 
@@ -349,17 +277,6 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig)
 {
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
- * Signal Child Handler
- * ■■■■                                                                 ■■■■■■ */
- 	
- 	printf("\033[1;33mA Child finished \033[0m \n");
- 	// exit(0);
-	// pid_t pid;
-	// while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {}
-
-/* ■■■■                                                                 ■■■■■■ */
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
 }
 
@@ -370,16 +287,6 @@ void sigchld_handler(int sig)
  */
 void sigint_handler(int sig)
 {
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
- * Signal Interrupt Handler
- * ■■■■                                                                 ■■■■■■ */
- 	
- 	printf("\n\033[1;33mYou pressed ctr+c, now bye bye~ \033[0m \n");
- 	// exit(0);
-
-/* ■■■■                                                                 ■■■■■■ */
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
-
   return;
 }
 
@@ -390,15 +297,6 @@ void sigint_handler(int sig)
  */
 void sigtstp_handler(int sig)
 {
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
- * Signal stop Handler
- * ■■■■                                                                 ■■■■■■ */
-
- 	printf("\n\033[0;35mYou pressed ctr+z, not yet~ \033[0m \n");
- 	// exit(0);
-
-/* ■■■■                                                                 ■■■■■■ */
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
 }
 
@@ -623,11 +521,3 @@ void sigquit_handler(int sig)
 
 
 
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
- * Custom function implementation
- * ■■■■                                                                 ■■■■■■ */
-  
-
-
-/* ■■■■                                                                 ■■■■■■ */
-/* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
