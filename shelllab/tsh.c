@@ -206,12 +206,13 @@ void eval(char *cmdline)
 	int fOrb;
 	pid_t pid;
 	int jid;
-	// sigset_t mask;			/* mask */
+	
 	strcpy(buffer, cmdline);
 	fOrb = parseline(buffer, argv);
 
+	// ignore empty commands
 	if (NULL == argv[0]) {
-		return; 	/* Ignore empty lines */
+		return;
 	}
 
 	if (!builtin_cmd(argv)) {
@@ -220,25 +221,15 @@ void eval(char *cmdline)
 			printf("<<< \033[1;32m%s\033[0m\n", cmdline);
 			fflush(stdout);
 		#endif
-
-		// sigemptyset(&mask);
-		// sigaddset(&mask, SIGCHLD);
-		// sigprocmask(SIG_BLOCK, &mask, NULL); /* Block SIGCHLD */
 		
 		if ((pid = fork()) == 0) {
 			setpgid(0, 0);
-			// sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
-			// printf("---%s", argv[0]);
-			// printf("child id: %d\n", getpid());
+			
 			if (execve(argv[0], argv, environ) < 0) {
 				printf("%s: Command not found\n", argv[0]);
 				exit(0);
 			}
 		}
-
-		#ifdef DEBUG
-			// printf("\033[0;37m{{forked pid: %d \033[0m\n", pid);
-		#endif
 
 		if (fOrb) {
 			// if it is a background job, parent add job 
@@ -249,14 +240,12 @@ void eval(char *cmdline)
 			addjob(jobs, pid, BG, cmdline);
 			jid = pid2jid(pid);
 			printf("[%d] (%d) %s", jid, pid, cmdline);
-			// sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
 		}else {
 			// if it is a foreground job, parent wait
 			#ifdef DEBUG
 				printf("\033[0;35m(%d)job run in foreground! \033[0m\n", pid);
 			#endif
 			addjob(jobs, pid, FG, cmdline);
-			// sigprocmask(SIG_UNBLOCK, &mask, NULL); /* Unblock SIGCHLD */
 			waitfg(pid);
 		}
 	}
