@@ -207,6 +207,7 @@ void eval(char *cmdline)
 	pid_t pid;
 	int jid;
 	
+	sigset_t mask;
 	strcpy(buffer, cmdline);
 	fOrb = parseline(buffer, argv);
 
@@ -216,6 +217,11 @@ void eval(char *cmdline)
 	}
 
 	if (!builtin_cmd(argv)) {
+
+		sigemptyset(&mask);
+		sigaddset(&mask, SIGCHLD);
+		sigprocmask(SIG_BLOCK, &mask, NULL);
+
 		#ifdef DEBUG
 			printf("\033[1;30mNo.%d------------otherwise------------------------------\033[0m\n", ++STEPINDEX);
 			printf("<<< \033[1;32m%s\033[0m\n", cmdline);
@@ -224,6 +230,7 @@ void eval(char *cmdline)
 		
 		if ((pid = fork()) == 0) {
 			setpgid(0, 0);
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);
 			
 			if (execve(argv[0], argv, environ) < 0) {
 				printf("%s: Command not found\n", argv[0]);
@@ -240,16 +247,17 @@ void eval(char *cmdline)
 			addjob(jobs, pid, BG, cmdline);
 			jid = pid2jid(pid);
 			printf("[%d] (%d) %s", jid, pid, cmdline);
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);
 		}else {
 			// if it is a foreground job, parent wait
 			#ifdef DEBUG
 				printf("\033[0;35m(%d)job run in foreground! \033[0m\n", pid);
 			#endif
 			addjob(jobs, pid, FG, cmdline);
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);
 			waitfg(pid);
 		}
 	}
-
 
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
@@ -322,10 +330,6 @@ int builtin_cmd(char **argv)
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ *
  * built in command
  * ■■■■                                                                 ■■■■■■ */
- 	// printf("==%s \n", argv[0]);
-	// printf("==%s \n", argv[1]);
-	// fflush(stdout);
-
 	if (!strcmp(argv[0], "quit")) {
 		// If quit
 		//  kill(0, SIGQUIT);
@@ -339,7 +343,6 @@ int builtin_cmd(char **argv)
 		#ifdef DEBUG
 			printf("\033[1;30mNo.%d-----------------------jobs------------------------\033[0m\n", ++STEPINDEX);
 		#endif
-		// printf("INTO jobs\n");
 		
 		listjobs(jobs);
 		return 1;
@@ -348,13 +351,10 @@ int builtin_cmd(char **argv)
 		#ifdef DEBUG
 			printf("\033[1;30mNo.%d-----------------------bgfg------------------------\033[0m\n", ++STEPINDEX);
 		#endif
-		// printf("INTO do_bgfg\n");
+		
 		do_bgfg(argv);
 		return 1;
 	}
-
-		// printf("NOT INTO ANY\n");
-		// fflush(stdout);
 
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
@@ -373,7 +373,6 @@ void do_bgfg(char **argv)
 	int jid;
 	pid_t pid;
 	struct job_t *job;
-
 
 	//error handdling, check arguments exist
 	if (NULL == argv[1]) {
@@ -421,9 +420,9 @@ void do_bgfg(char **argv)
 	}
 
 	#ifdef DEBUG
-		// printf("\033[1;30mNo.%d---------------bg or fg----------------------------\033[0m\n", ++STEPINDEX);
+		printf("\033[1;30mNo.%d---------------bg or fg----------------------------\033[0m\n", ++STEPINDEX);
  		// // printf("<<< \033[1;32m%s\033[0m\n", cmdline);
-		// fflush(stdout);
+		fflush(stdout);
 	#endif
 
 	// deal bg gf, send SIGCONT.
@@ -463,20 +462,20 @@ void waitfg(pid_t pid)
 		printf("\033[1;30m fgpid: %d, argpid: %d \033[0m\n", foregroundPid, pid);
 	#endif
 
+	// 1. Use pause handle the wait.
 	getIntOrStp = 0;
+	// pause();
+	// if (!getIntOrStp) {
+	// 	#ifdef DEBUG
+	// 		printf("pause 1 more time for ctrl+z\n");
+	// 	#endif
+	// 	pause();
+	// }
 
-	pause();
-	
-	if (!getIntOrStp) {
-		#ifdef DEBUG
-			printf("pause 1 more time for ctrl+z\n");
-		#endif
-
-		pause();
-	}
-	// while (pid == fgpid(jobs)){
-    //     sleep(0);
-    // }
+	// 2. Use busy loop handle the wait
+	while (pid == fgpid(jobs)){
+        sleep(0);
+    }
 
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
@@ -502,13 +501,13 @@ void sigchld_handler(int sig)
  	
 	int status;
 	pid_t pid;
+	int jid;
+	pid_t foregroundPid;
+	foregroundPid = fgpid(jobs);
 	#ifdef DEBUG
 		pid_t temppid;
 		printf("\033[1;31m{SIGCHLD}\033[0m");
 	#endif
-	int jid;
-	pid_t foregroundPid;
-	foregroundPid = fgpid(jobs);
 
 	getIntOrStp = 0;
 	
@@ -539,18 +538,13 @@ void sigchld_handler(int sig)
 			deletejob(jobs, foregroundPid);
 		}
 	
-		
-
 		#ifdef DEBUG
 			printf("\033[0;32;34mDelete pid:\033[0m %d \n", temppid);
 			printf("\033[1;33m[SIGCHLD]A Child finished and told his father [%d] \033[0m \n", sig);
 			fflush(stdout);
 		#endif
 	}
-	//  printf("--pid: %d in sigchld \n", pid);
 	
- 	// exit(0);
-
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
   return;
@@ -583,7 +577,6 @@ void sigint_handler(int sig)
 		fprintf(stdout, "\033[0;32;31mkill (%d) error in SIGINT\033[0m\n", pid);
 		return;
 	}
-	
  	// printf("!Job [%d] (%d) terminated by signal %d\n", jid, pid, sig);
 
 /* ■■■■                                                                 ■■■■■■ */
@@ -612,19 +605,16 @@ void sigtstp_handler(int sig)
 	int jid;
 	jid = pid2jid(pid);
 	jobs[jid-1].state = ST;
-	// printf("job[%d] stopped which pid: %d \n", jid, pid);
 
 	getIntOrStp = 1;
 	
 	#ifdef DEBUG
 		printf("\033[1;30mNo.%d---------------------------------------------------\033[0m\n", ++STEPINDEX);
 		printf("\033[1;33m[SIGSTP]You pressed ctrl+z, \033[0m\n");
-		// printf("job[%d](%d) suspended! \n", jid, pid);
 		printf("\033[1;36mpid: %d jid: %d in stop handdler \033[0m\n", pid, jid);
 		fflush(stdout);
 	#endif
 	// printf("!Job [%d] (%d) stopped by signal %d\n", jid, pid, sig);
- 	// exit(0);
 
 /* ■■■■                                                                 ■■■■■■ */
 /* ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ */
